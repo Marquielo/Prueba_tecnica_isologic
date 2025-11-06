@@ -1,20 +1,40 @@
 # Prueba Técnica – Gestión de Tareas (ISOLOGIC)
 
-Bitácora paso a paso de lo que fui haciendo, con comandos y explicaciones como si se lo contara a otra persona. Todo está pensado para Windows PowerShell.
+Voy dejando mi bitácora paso a paso, con los comandos que uso. Trabajo en Windows PowerShell.
 
 ## Contexto
 
-Quiero construir una API en Nest.js con autenticación por token (JWT) y un CRUD de tareas. Más adelante agregaré un frontend en React, pero aquí documento hasta el punto exacto donde voy hoy.
+Estoy construyendo una API en Nest.js con autenticación por token (JWT) y un CRUD de tareas. Más adelante voy a agregar un frontend en React, pero acá dejo documentado exactamente hasta dónde llegué hoy.
 
-## Convenciones de idioma
+## Convenciones
+- Código fuente: en inglés para nombres de clases, funciones, variables y DTOs, siguiendo convenciones de TypeScript/NestJS.
+- API: claves de respuesta en inglés (por ejemplo, `access_token`, `title`, `completed`) y mensajes de error para el usuario en español cuando corresponde.
 
-- Documentación y archivos de guía (README, comentarios explicativos, issues): Español (Chile).
-- Código fuente (nombres de clases, funciones, variables, DTOs): Inglés, siguiendo convenciones de TypeScript/NestJS.
-- API: claves de respuesta en inglés (por ejemplo, `access_token`, `title`, `completed`); mensajes de error orientados al usuario en español cuando corresponda.
+---
+
+## Inicio rápido
+
+- Backend
+```powershell
+cd "c:\Users\marce\OneDrive\Documentos\GitHub\Prueba_tecnica_isologic\backend"
+Copy-Item .env.example .env -Force
+npm install
+npm run start:dev
+```
+
+- Frontend
+```powershell
+cd "c:\Users\marce\OneDrive\Documentos\GitHub\Prueba_tecnica_isologic\frontend"
+npm install
+npm run dev
+```
+
+Login demo: usuario `admin`, contraseña `1234`.
 
 ## Estructura actual del repo
 
-- `backend/` — proyecto Nest.js ya inicializado
+- `backend/` — proyecto Nest.js (auth + tasks)
+- `frontend/` — app React + Vite (Login y Dashboard)
 
 ---
 
@@ -116,8 +136,10 @@ npx nest g service tasks --no-spec
 
 ## Estado actual
 
-- Estructura base lista con módulos de `auth` y `tasks` generados.
-- Aún NO implementé la lógica de login ni el CRUD; solo está el esqueleto.
+- Login con JWT implementado (`POST /auth/login`) con usuario demo `admin/1234`.
+- CRUD de tareas protegido con token (`GET/POST/PUT/DELETE /tasks`).
+- Frontend funcional: Login guarda token; Dashboard lista/crea/actualiza/borra tareas.
+- Persistencia en memoria (array en el servicio) para la prueba.
 
 ---
 
@@ -246,6 +268,7 @@ npm i @nestjs/jwt @nestjs/passport passport passport-jwt class-validator class-t
 	- 401 en las peticiones: verifica que exista `token` en LocalStorage y que se envíe el header `Authorization: Bearer <token>` (pestaña Network del navegador).
 	- CORS: el backend debe tener `app.enableCors()` en `src/main.ts`.
 	- Backend en otro puerto/host: define `VITE_API_BASE` como se indica arriba y reinicia `npm run dev`.
+	- Iconos sociales en blanco o error de integridad SRI: quité el CDN de Font Awesome y usé `react-icons`. Si aparece el error de SRI, haz Ctrl+F5 y verifica que `frontend/index.html` no tenga el link al CDN de FA.
 
 	---
 
@@ -261,3 +284,34 @@ npm i @nestjs/jwt @nestjs/passport passport passport-jwt class-validator class-t
 	- `backend/`
 	- `frontend/`
 	- `README.md`
+
+	---
+
+	## Variables de entorno del backend
+
+	Uso variables de entorno y valido que existan al arrancar. Si falta `PORT`, no inicia.
+
+	```
+	PORT=3000
+	HOST=127.0.0.1
+	JWT_SECRET=devsecret
+	JWT_EXPIRES=1h
+	```
+
+	- HOST 127.0.0.1 limita el acceso a localhost. Usa `0.0.0.0` si necesitas exponer en red.
+	- No hardcodeo el puerto: lo leo desde `.env` (más seguro y portable).
+
+	---
+
+	## Endpoints (resumen)
+
+	- Auth
+		- POST `/auth/login`
+			- Body: `{ "username": "admin", "password": "1234" }`
+			- 200: `{ "access_token": "..." }`
+
+	- Tasks (con `Authorization: Bearer <token>`)
+		- GET `/tasks` → 200 lista de tareas
+		- POST `/tasks` → 201 crea `{ title }`
+		- PUT `/tasks/:id` → 200 actualiza `{ title?, completed? }`
+		- DELETE `/tasks/:id` → 204 elimina
