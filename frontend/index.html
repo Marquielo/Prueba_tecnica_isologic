@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0d6efd" />
+    <title>Gestión de Tareas</title>
+
+    <!--
+      Decisión de estilos:
+      - Opté por Bootstrap vía CDN para avanzar rápido con un look moderno sin agregar dependencias locales.
+      - Esto me permite maquetar el Login y el Dashboard con componentes estándar (forms, botones, cards, etc.).
+    -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+
+    <!--
+      Nota técnica (Font Awesome deshabilitado por SRI):
+      - Al inicio intenté cargar Font Awesome desde CDN para iconos sociales, pero el navegador bloqueó el recurso por integridad SRI.
+      - Error exacto observado en consola:
+        "Failed to find a valid digest in the 'integrity' attribute for resource 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css' with computed SHA-512 integrity 'SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=='. The resource has been blocked."
+      - Para evitar depender de un hash SRI que puede no coincidir, eliminé el link del CDN y migré los iconos a 'react-icons' (paquete local).
+      - Si más adelante necesito Font Awesome:
+        * Lo instalaré como dependencia local (@fortawesome/*), o
+        * Si uso CDN nuevamente, me aseguraré de usar el 'integrity' correcto para esa versión exacta.
+    -->
+    <!-- (Intencionalmente sin link de Font Awesome por CDN) -->
+  </head>
+  <body class="bg-light">
+    <!--
+      Punto de montaje de React:
+      - La app de React se inyecta dentro de #root (Login/Dashboard).
+    -->
+    <div id="root"></div>
+
+    <!--
+      Bootstrap JS (bundle):
+      - Incluyo el bundle por si utilizo componentes interactivos de Bootstrap.
+      - No es estrictamente necesario para el flujo actual, pero lo dejo listo.
+    -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+
+    <!--
+      Entrada de la aplicación:
+      - Cargó el entry-point de Vite/React.
+      - Si cambio variables (ej. VITE_API_BASE), hago un hard refresh (Ctrl+F5).
+    -->
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
