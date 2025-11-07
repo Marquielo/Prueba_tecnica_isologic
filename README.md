@@ -139,7 +139,92 @@ npx nest g service tasks --no-spec
 - Login con JWT implementado (`POST /auth/login`) con usuario demo `admin/1234`.
 - CRUD de tareas protegido con token (`GET/POST/PUT/DELETE /tasks`).
 - Frontend funcional: Login guarda token; Dashboard lista/crea/actualiza/borra tareas.
-- Persistencia en memoria (array en el servicio) para la prueba.
+- Persistencia en memoria (array) para la versión inicial y versión con PostgreSQL (rama `prueba_tecnica_isologic_mas_db`) usando TypeORM.
+
+---
+
+## Cómo levantar este proyecto (backend + frontend)
+
+### Requisitos previos
+- Node.js 18+ y npm
+- Git
+- PostgreSQL 17 (solo necesario para la rama con base de datos)
+
+### Clonar la rama con base de datos (si se usa persistencia real)
+```
+git clone --branch prueba_tecnica_isologic_mas_db --single-branch https://github.com/Marquielo/Prueba_tecnica_isologic.git Prueba_tecnica_isologic
+cd Prueba_tecnica_isologic/backend
+```
+
+### Instalar dependencias y preparar entorno
+```
+npm ci
+Copy-Item .env.example .env -Force
+```
+
+Si estoy en la rama con DB, edito `.env` (o uso los valores por defecto):
+```
+PORT=3000
+HOST=127.0.0.1
+JWT_SECRET=devsecret
+JWT_EXPIRES=3600
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_USER=tasks_user
+DB_PASS=postgres1234
+DB_NAME=tasks_db
+```
+
+### Crear base de datos (solo primera vez, rama con DB)
+```
+"C:\Program Files\PostgreSQL\17\bin\psql.exe" -h 127.0.0.1 -U postgres -d postgres -c "CREATE USER tasks_user WITH PASSWORD 'postgres1234' LOGIN;"
+"C:\Program Files\PostgreSQL\17\bin\psql.exe" -h 127.0.0.1 -U postgres -d postgres -c "CREATE DATABASE tasks_db OWNER tasks_user;"
+```
+
+### Iniciar backend (desarrollo)
+```
+npm run start:dev
+```
+Se crean (TypeORM synchronize) las tablas `users` y `tasks`. Si `users` está vacía, se inserta `admin/1234` automáticamente.
+
+### Probar login y CRUD rápido (PowerShell)
+```
+$base='http://127.0.0.1:3000'
+$loginBody=@{username='admin';password='1234'} | ConvertTo-Json
+$login=Invoke-RestMethod -Method Post -Uri "$base/auth/login" -ContentType 'application/json' -Body $loginBody
+$token=$login.access_token
+$headers=@{Authorization="Bearer $token"}
+
+Invoke-RestMethod -Method Get -Uri "$base/tasks" -Headers $headers | ConvertTo-Json -Depth 5
+$task=Invoke-RestMethod -Method Post -Uri "$base/tasks" -Headers $headers -ContentType 'application/json' -Body (@{ title='Tarea 1' } | ConvertTo-Json)
+$id=$task.id
+Invoke-RestMethod -Method Put -Uri "$base/tasks/$id" -Headers $headers -ContentType 'application/json' -Body (@{ completed=$true } | ConvertTo-Json)
+Invoke-RestMethod -Method Delete -Uri "$base/tasks/$id" -Headers $headers
+Invoke-RestMethod -Method Get -Uri "$base/tasks" -Headers $headers | ConvertTo-Json -Depth 5
+```
+
+### Ejecutar frontend
+```
+cd ..\frontend
+npm ci
+npm run dev
+```
+Uso `VITE_API_BASE` en `frontend/.env` si el backend corre en otra URL/puerto.
+
+### Verificación opcional en PostgreSQL
+```
+SELECT id, username FROM users;
+SELECT id, title, completed FROM tasks ORDER BY id;
+```
+
+### Troubleshooting rápido
+| Problema | Causa | Solución |
+|----------|-------|----------|
+| 401 en /tasks | Falta token | Asegurar header Authorization Bearer <token> |
+| Cannot PUT /tasks/ | ID vacío | Revisar variable `$id` antes de llamar PUT |
+| ECONNREFUSED 5432 | Postgres apagado | Iniciar servicio PostgreSQL |
+| password authentication failed | Credenciales mal | Revisar `.env` y usuario BD |
+| CORS en frontend | Falta enableCors() | Confirmar `app.enableCors()` en `main.ts` |
 
 ---
 
