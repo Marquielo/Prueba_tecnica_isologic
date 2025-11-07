@@ -2,10 +2,12 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { JwtStrategy } from './jwt.strategy.js';
+import { JwtStrategy } from './jwt.strategy';
+import { User } from '../users/user.entity';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { JwtStrategy } from './jwt.strategy.js';
       secret: process.env.JWT_SECRET || 'devsecret',
       // La expiración se definirá al momento de firmar en el servicio.
     }),
+    // Repositorio de usuarios para validar credenciales contra la base de datos
+    TypeOrmModule.forFeature([User]),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

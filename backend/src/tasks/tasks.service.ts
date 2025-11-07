@@ -1,38 +1,41 @@
-// Servicio de tareas: mantiene un arreglo en memoria con operaciones CRUD.
+// Servicio de tareas: ahora usa TypeORM para persistir en PostgreSQL.
 import { Injectable } from '@nestjs/common';
-
-export type Task = { id: number; title: string; completed: boolean };
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Task } from './task.entity';
 
 @Injectable()
 export class TasksService {
-	// Almacenamiento en memoria (suficiente para la prueba técnica)
-	private tasks: Task[] = [];
-	private idSeq = 1;
+	constructor(
+		@InjectRepository(Task)
+		private readonly repo: Repository<Task>,
+	) {}
 
 	// Obtener todas las tareas
-	findAll(): Task[] {
-		return this.tasks;
+	async findAll(): Promise<Task[]> {
+		return this.repo.find();
 	}
 
 	// Crear una nueva tarea con completed=false por defecto
-	create(title: string): Task {
-		const task: Task = { id: this.idSeq++, title, completed: false };
-		this.tasks.push(task);
-		return task;
+	async create(title: string): Promise<Task> {
+		const task = this.repo.create({ title, completed: false });
+		return this.repo.save(task);
 	}
 
 	// Actualizar una tarea por id (title/completed)
-	update(id: number, dto: Partial<Omit<Task, 'id'>>): Task | null {
-		const idx = this.tasks.findIndex((t) => t.id === id);
-		if (idx === -1) return null;
-		this.tasks[idx] = { ...this.tasks[idx], ...dto };
-		return this.tasks[idx];
+	async update(
+		id: number,
+		dto: Partial<Omit<Task, 'id'>>,
+	): Promise<Task | null> {
+		const existing = await this.repo.findOne({ where: { id } });
+		if (!existing) return null;
+		const merged = this.repo.merge(existing, dto);
+		return this.repo.save(merged);
 	}
 
 	// Eliminar una tarea por id
-	remove(id: number): boolean {
-		const len = this.tasks.length;
-		this.tasks = this.tasks.filter((t) => t.id !== id);
-		return this.tasks.length !== len;
+	async remove(id: number): Promise<boolean> {
+		const res = await this.repo.delete(id);
+		return (res.affected ?? 0) > 0;
 	}
 }
