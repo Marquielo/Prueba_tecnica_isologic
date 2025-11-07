@@ -10,9 +10,10 @@ import {
 	Post,
 	Put,
 	UseGuards,
+	HttpCode,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { TasksService } from './tasks.service.js';
+import { TasksService } from './tasks.service';
 
 @UseGuards(AuthGuard('jwt')) // Protege todas las rutas de este controlador
 @Controller('tasks')
@@ -21,13 +22,13 @@ export class TasksController {
 
 	// GET /tasks → lista todas las tareas
 	@Get()
-	findAll() {
+	async findAll() {
 		return this.tasks.findAll();
 	}
 
 	// POST /tasks → crea una tarea nueva (requiere { title })
 	@Post()
-	create(@Body() body: { title?: string }) {
+	async create(@Body() body: { title?: string }) {
 		const title = body?.title?.trim();
 		if (!title) {
 			throw new BadRequestException('El título es requerido');
@@ -37,11 +38,11 @@ export class TasksController {
 
 	// PUT /tasks/:id → actualiza título o estado completed
 	@Put(':id')
-	update(
+	async update(
 		@Param('id') id: string,
 		@Body() dto: { title?: string; completed?: boolean },
 	) {
-		const updated = this.tasks.update(Number(id), dto);
+		const updated = await this.tasks.update(Number(id), dto);
 		if (!updated) {
 			throw new NotFoundException('Tarea no encontrada');
 		}
@@ -50,11 +51,12 @@ export class TasksController {
 
 	// DELETE /tasks/:id → elimina una tarea
 	@Delete(':id')
-	remove(@Param('id') id: string) {
-		const ok = this.tasks.remove(Number(id));
+	@HttpCode(204)
+	async remove(@Param('id') id: string) {
+		const ok = await this.tasks.remove(Number(id));
 		if (!ok) {
 			throw new NotFoundException('Tarea no encontrada');
 		}
-		// 204 sin contenido — Nest devolverá 200 si retornamos algo; aquí no devolvemos body.
+		// 204 sin contenido
 	}
 }
